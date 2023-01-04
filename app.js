@@ -49,13 +49,14 @@ app.get("/players/:playerId/", async (request, response) => {
   const { playerId } = request.params;
   const sqlQuery = `SELECT * FROM player_details WHERE player_id = ${playerId}`;
   const result = await db.get(sqlQuery);
-  response.send(result.map((each) => convertPlayerTablePascalToCamel(each)));
+  response.send(convertPlayerTablePascalToCamel(result));
 });
 
 //API-3
 app.put("/players/:playerId/", async (request, response) => {
   const { playerId } = request.params;
-  const { player_name } = request.body;
+  const details = request.body;
+  const { player_name } = details;
   const sqlQuery = `UPDATE player_details SET player_name = '${player_name}' WHERE player_id = ${playerId}`;
   const result = await db.run(sqlQuery);
   response.send("Player Details Updated");
@@ -65,8 +66,8 @@ app.put("/players/:playerId/", async (request, response) => {
 app.get("/matches/:matchId/", async (request, response) => {
   const { matchId } = request.params;
   const sqlQuery = `SELECT * FROM match_details WHERE match_id = ${matchId}`;
-  const result = await db.all(sqlQuery);
-  response.send(result.map((each) => convertMatchDetailsPascalToCamel(each)));
+  const result = await db.get(sqlQuery);
+  response.send(convertMatchDetailsPascalToCamel(result));
 });
 
 //API-5
@@ -88,14 +89,14 @@ app.get("/matches/:matchId/players", async (request, response) => {
 //API-7
 app.get("/players/:playerId/playerScores/", async (request, response) => {
   const { playerId } = request.params;
-  const sqlQuery = `SELECT player_details.player_id, player_details.player_name, SUM(score), COUNT(fours), COUNT(sixes) FROM player_details INNER JOIN player_match_score ON player_details.player_id = player_match_score.player_id`;
-  const result = await db.all(sqlQuery);
+  const sqlQuery = `SELECT player_details.player_id, player_details.player_name, SUM(score), SUM(fours), SUM(sixes) FROM player_details INNER JOIN player_match_score ON player_details.player_id = player_match_score.player_id WHERE player_details.player_id = ${playerId}`;
+  const result = await db.get(sqlQuery);
   response.send({
     playerId: result["player_id"],
     playerName: result["player_name"],
     totalScore: result["SUM(score)"],
-    totalFours: result["COUNT(fours)"],
-    totalSixes: result["COUNT(sixes)"],
+    totalFours: result["SUM(fours)"],
+    totalSixes: result["SUM(sixes)"],
   });
 });
 
